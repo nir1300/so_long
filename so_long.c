@@ -1,8 +1,4 @@
-#include "mlx_linux/mlx.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
+/* 
 typedef struct	s_data {
 	void	*img;
 	char	*addr;
@@ -28,10 +24,10 @@ void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
 
 int main(void)
 {
-/*     if (argc != 2)
+    if (argc != 2)
         exit (1);
     if (strnstr(argv[1], ".ber", strlen(argv[1])) == NULL)
-        exit (1); */
+        exit (1);
 
     t_data  img;
     void *mlx;
@@ -48,5 +44,21 @@ int main(void)
         my_mlx_pixel_put(&img, left, top, 0x00FF0000);
         mlx_put_image_to_window(mlx, mlx_win, img.img, 0, 0);
     }
+
+    mlx_hook(img.win, 2, 1L<<0, close, &vars);
     mlx_loop(mlx);
+    // mlx_toop(img.mlx);
 }
+
+// use ESC or clicking on windows cross to close program: create event with mlx_loop
+
+// structure:
+// build background
+// draw map incl collectibles, walls, start and end
+// draw player
+
+// 1. step: validate map
+    // check only 1 exit and entrance
+    // check if chars are valid
+    // check there is a possible way to reach the goal without walls abstracting it
+ */
