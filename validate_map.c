@@ -12,30 +12,17 @@
 
 #include "so_long.h"
 
-
-char	*ft_free(char *dest, char *buf, int join_temp)
+static void	ft_freeme(char **arr, int a)
 {
-	char	*temp;
-
-	if (join_temp == 1)
+	while (a >= 0)
 	{
-		temp = ft_strjoin(dest, buf);
-		if (!temp)
-		{
-			free(buf);
-			return (NULL);
-		}
-		free(dest);
-		return (temp);
+		free(arr[a]);
+		a--;
 	}
-	if (dest)
-		free(dest);
-	if (buf)
-		free(buf);
-	return (NULL);
+	free(arr);
 }
 
-char	*ft_remainder(char *dest)
+char	*sl_ft_remainder(char *dest)
 {
 	char	*rem;
 	int		i;
@@ -58,7 +45,7 @@ char	*ft_remainder(char *dest)
 	return (rem);
 }
 
-char	*create_line(char *dest)
+char	*sl_create_line(char *dest)
 {
 	int		i;
 	char	*temp;
@@ -79,10 +66,9 @@ char	*create_line(char *dest)
 	return (temp);
 }
 
-char	*read_lines(int fd, char *dest, char *buf)
+char	*sl_read_lines(int fd, char *dest, char *buf)
 {
-	int		check;
-    int BUFFER_SIZE = 0;
+	int	check;
 
 	check = 1;
 	buf = malloc(BUFFER_SIZE + 1);
@@ -108,7 +94,7 @@ char	*read_lines(int fd, char *dest, char *buf)
 	return (dest);
 }
 
-char	*get_next_line(int fd)
+char	*sl_get_next_line(int fd)
 {
 	static char	*dest;
 	char		*ret_line;
@@ -123,57 +109,59 @@ char	*get_next_line(int fd)
 		if (!dest)
 			return (NULL);
 	}
-	dest = read_lines(fd, dest, buf);
+	dest = sl_read_lines(fd, dest, buf);
 	if (!dest)
 		return (NULL);
-	ret_line = create_line(dest);
+	ret_line = sl_create_line(dest);
 	if (!ret_line)
 		return (ft_free(dest, NULL, 0));
-	dest = ft_remainder(dest);
+	dest = sl_ft_remainder(dest);
 	return (ret_line);
 }
 
-/* 
-#include <stdio.h>
-
-int	main(void)
+char	*create_map(int argc, char *argv[], int fd)
 {
-	int fd;
-	char *next_line;
+	char	*txt;
+	char	*temp;
+	char	*new_txt;
+	char	**full_txt;
+	int		a;
 
-	fd = open("file.txt", O_RDONLY);
+	txt = ft_strdup("");
+	while (1)
+	{
+		temp = sl_get_next_line(fd);
+		if (!temp)
+			break ;
+		new_txt = ft_strjoin(txt, temp);
+		free(txt);
+		free(temp);
+		txt = new_txt;
+	}
+	full_txt = ft_split(txt, '\n');
+	free(new_txt);
+	a = 0;
+	while (full_txt[a])
+	{
+		printf("%s\n", full_txt[a]);
+		a++;
+	}
+}
+
+int	main(int argc, char *argv[])
+{
+	int		fd;
+	char	*map;
+	int		error;
+
+	if (argc != 2)
+		exit(1);
+	fd = open("map.ber", O_RDONLY);
 	if (fd < 0)
 		return (0);
-	while (1)
-	{
-		next_line = get_next_line(fd);
-		if (!next_line)
-			break ;
-		printf("%s", next_line);
-		free(next_line);
-	}
-	close(fd);
+	map = create_map(argc, argv, fd);
+	//error = validate_map(map);
+	// ft_freeme(map, a);
 }
- */
-int main(int argc, char *argv[])
-{
-    if (argc != 2)
-        exit (1);
-    if (strnstr(argv[1], ".ber", strlen(argv[1])) == NULL)
-        exit (1);
-    int fd = open(argv[1], O_RDONLY);
-    if (fd < 0)
-		return (0);
-    int line_count = 0;
-    int line_length = 0;
-    char *full_txt;
-	while (1)
-	{
-		full_txt = get_next_line(fd);
-		if (!full_txt)
-			break ;
-	}
-    int i = 0;
-    while (full_txt[i++])
-        printf("%c", full_txt[i]);
-}
+
+
