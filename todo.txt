@@ -1,0 +1,15 @@
+to-do 30/12/24
+print background
+
+to-do 3/1/25
+print map
+
+OVERALL:
+graphics
+    do background
+    print map
+    print player
+
+graphic management
+    keybinding characters
+    

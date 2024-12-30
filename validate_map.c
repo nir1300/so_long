@@ -119,14 +119,14 @@ char	*sl_get_next_line(int fd)
 	return (ret_line);
 }
 
-char	*create_map(int argc, char *argv[], int fd)
+char	**create_map(int fd)
 {
 	char	*txt;
 	char	*temp;
 	char	*new_txt;
 	char	**full_txt;
-	int		a;
 
+	new_txt = NULL;
 	txt = ft_strdup("");
 	while (1)
 	{
@@ -138,30 +138,121 @@ char	*create_map(int argc, char *argv[], int fd)
 		free(temp);
 		txt = new_txt;
 	}
+	if (txt[0] == 0)
+		return (free(txt), NULL);
 	full_txt = ft_split(txt, '\n');
 	free(new_txt);
+	return (full_txt);
+}
+
+int	validate_map(char **map)
+{
+	int	a;
+	int	b;
+	int	length[2];
+	int	start_exit;
+	int	collect;
+
 	a = 0;
-	while (full_txt[a])
+	length[0] = 0;
+	start_exit = 0;
+	collect = 0;
+	while (map[length[0]])
+		length[0]++;
+	length[1] = ft_strlen(map[0]);
+	while (map[a])
 	{
-		printf("%s\n", full_txt[a]);
+		b = 0;
+		while (map[a][b])
+		{
+			if (((a == 0 || a == length[0] - 1 || b == 0 || b == length[1] - 1)
+					&& map[a][b] != '1') || (ft_strchr("01CEP",
+						map[a][b]) == NULL))
+				return (1);
+			if (map[a][b] == 'E' || map[a][b] == 'P')
+				start_exit++;
+			if (map[a][b] == 'C')
+				collect++;
+			b++;
+		}
+		if (b != length[1])
+			return (1);
 		a++;
 	}
+	if (start_exit != 2 || collect < 1)
+		return (1);
+	return (collect + start_exit);
+}
+
+void	fill_grid(char **map, int x, int y, int length[], int *count)
+{
+	if (map[x][y] == 'C' || map[x][y] == 'E')
+		(*count)++;
+	if (map[x][y] == '1' || map[x][y] == 'F' || map[x][y] == 'E')
+		return ;
+	map[x][y] = 'F';
+	if (x + 1 < length[0])
+		fill_grid(map, x + 1, y, length, count);
+	if (x - 1 >= 0)
+		fill_grid(map, x - 1, y, length, count);
+	if (y + 1 < length[1])
+		fill_grid(map, x, y + 1, length, count);
+	if (y - 1 >= 0)
+		fill_grid(map, x, y - 1, length, count);
+}
+
+int	flood_fill(char **map)
+{
+	int	x;
+	int	y;
+	int length[2];
+	int	count;
+
+	length[0] = 0;
+	x = 0;
+	count = 0;
+	while (map[length[0]])
+		length[0]++;
+	length[1] = ft_strlen(map[0]);
+	while (map[x])
+	{
+		y = 0;
+		while (map[x][y])
+		{
+			if (map[x][y] == 'P')
+				return (fill_grid(map, x, y, length, &count), count);
+			y++;
+		}
+		x++;
+	}
+	return (1);
 }
 
 int	main(int argc, char *argv[])
 {
 	int		fd;
-	char	*map;
-	int		error;
+	char	**map;
+	int		collect_nb;
+	int		flood;
+	int		a;
 
 	if (argc != 2)
 		exit(1);
-	fd = open("map.ber", O_RDONLY);
+	fd = open(argv[1], O_RDONLY);
 	if (fd < 0)
-		return (0);
-	map = create_map(argc, argv, fd);
-	//error = validate_map(map);
-	// ft_freeme(map, a);
+		return (perror("Error\nMessage"), 1);
+	map = create_map(fd);
+	if (!map)
+		exit(1);
+	collect_nb = validate_map(map);
+	if (collect_nb == 1)
+		return (printf("Error\nInvalid map"), 1);
+	flood = flood_fill(map);
+	printf("%i\n", collect_nb);
+	if (collect_nb != flood)
+		return (printf("Error\nNot all collectibles reachable"));
+	a = 0;
+	while (map[a])
+		printf("%s\n", map[a++]);
+	ft_freeme(map, a);
 }
-
-

@@ -1,23 +1,37 @@
-NAME = so_long
-CFILES = *.c
-OFILES = $(CFILES:.c=.o)
+# Define variables
+NAME = so_long.a
 CC = cc
+CFLAGS = -Wall -Werror -Wextra
 
-all: $(NAME)
+# Includes
+LIBFT_DIR = libft
+LIBFT = $(LIBFT_DIR)/libft.a
+INCLUDES = -I libft -I .
 
-$(NAME): $(OFILES)
-	$(CC) $(OFILES) -Lmlx_linux -lmlx_linux -L/usr/lib -Imlx_linux -lXext -lX11 -lm -lz -o $(NAME)
+# Files
+CFILES = validate_map.c
+OFILES = $(CFILES:.c=.o)
 
-%.o: %.c %.h
-	$(CC) -Wall -Wextra -Werror -I/usr/include -Imlx_linux -O3 -c $< -o $@
+# Compilation rules
+all: $(LIBFT_BONUS) $(NAME)
+
+$(LIBFT):
+	make -C $(LIBFT_DIR) bonus
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(INCLUDES) -I/usr/include -Imlx_linux -O3 -c $< -o $@
+
+$(NAME): $(OFILES) $(LIBFT)
+	$(CC) $(CFLAGS) $(OFILES) -L$(LIBFT_DIR) -lft -Lmlx_linux -Imlx_Linux -L/usr/lib -Imlx_linux -lXext -lX11 -lm -lz -o $(NAME)
 
 clean:
+	make clean -C $(LIBFT_DIR)
 	rm -f $(OFILES)
 
 fclean: clean
+	make fclean -C $(LIBFT_DIR)
 	rm -f $(NAME)
 
-re: fclean $(NAME)
+re: fclean all
 
-
-.PHONY: all clean fclean re
+.PHONY: all bonus clean fclean re
