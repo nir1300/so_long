@@ -181,13 +181,15 @@ int	validate_map(char **map)
 	}
 	if (start_exit != 2 || collect < 1)
 		return (1);
-	return (collect + start_exit);
+	return (collect);
 }
 
 void	fill_grid(char **map, int x, int y, int length[], int *count)
 {
-	if (map[x][y] == 'C' || map[x][y] == 'E')
+	if (map[x][y] == 'C')
+	{
 		(*count)++;
+	}
 	if (map[x][y] == '1' || map[x][y] == 'F' || map[x][y] == 'E')
 		return ;
 	map[x][y] = 'F';
@@ -245,10 +247,9 @@ int	main(int argc, char *argv[])
 	if (!map)
 		exit(1);
 	collect_nb = validate_map(map);
-	if (collect_nb == 1)
+	if (collect_nb == 0)
 		return (printf("Error\nInvalid map"), 1);
 	flood = flood_fill(map);
-	printf("%i\n", collect_nb);
 	if (collect_nb != flood)
 		return (printf("Error\nNot all collectibles reachable"));
 	a = 0;
