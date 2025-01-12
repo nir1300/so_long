@@ -6,14 +6,19 @@
 /*   By: nrumpfhu <nrumpfhu@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/15 12:57:04 by codespace         #+#    #+#             */
-/*   Updated: 2024/12/09 18:18:10 by nrumpfhu         ###   ########.fr       */
+/*   Updated: 2025/01/12 21:33:16 by nrumpfhu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "so_long.h"
 
-static void	ft_freeme(char **arr, int a)
+static void	ft_freeme(char **arr)
 {
+	int	a;
+
+	a = 0;
+	while (arr[a])
+		a++;
 	while (a >= 0)
 	{
 		free(arr[a]);
@@ -22,115 +27,19 @@ static void	ft_freeme(char **arr, int a)
 	free(arr);
 }
 
-char	*sl_ft_remainder(char *dest)
-{
-	char	*rem;
-	int		i;
-	int		n;
-
-	i = 0;
-	n = 0;
-	while (dest[i])
-		i++;
-	if (dest[i] == '\0')
-		return (ft_free(dest, NULL, 0));
-	i++;
-	rem = malloc(ft_strlen(dest) - i + 1);
-	if (!rem)
-		return (ft_free(dest, NULL, 0));
-	while (dest[i])
-		rem[n++] = dest[i++];
-	rem[n] = '\0';
-	ft_free(dest, NULL, 0);
-	return (rem);
-}
-
-char	*sl_create_line(char *dest)
-{
-	int		i;
-	char	*temp;
-
-	i = 0;
-	while (dest[i])
-		i++;
-	temp = malloc(i + 2);
-	if (!temp)
-		return (ft_free(dest, NULL, 0));
-	i = 0;
-	while (dest[i])
-	{
-		temp[i] = dest[i];
-		i++;
-	}
-	temp[i] = '\0';
-	return (temp);
-}
-
-char	*sl_read_lines(int fd, char *dest, char *buf)
-{
-	int	check;
-
-	check = 1;
-	buf = malloc(BUFFER_SIZE + 1);
-	if (!buf)
-		return (ft_free(dest, NULL, 0));
-	while (1)
-	{
-		check = read(fd, buf, BUFFER_SIZE);
-		if (check < 0)
-			return (ft_free(dest, buf, 0));
-		buf[check] = '\0';
-		if (check == 0)
-		{
-			if (*dest == '\0' || !dest)
-				return (ft_free(dest, buf, 0));
-			break ;
-		}
-		dest = ft_free(dest, buf, 1);
-		if (ft_strchr(buf, '\0') || (check < BUFFER_SIZE && *dest))
-			break ;
-	}
-	free(buf);
-	return (dest);
-}
-
-char	*sl_get_next_line(int fd)
-{
-	static char	*dest;
-	char		*ret_line;
-	char		*buf;
-
-	buf = NULL;
-	if (fd < 0)
-		return (NULL);
-	if (!dest)
-	{
-		dest = ft_strdup("");
-		if (!dest)
-			return (NULL);
-	}
-	dest = sl_read_lines(fd, dest, buf);
-	if (!dest)
-		return (NULL);
-	ret_line = sl_create_line(dest);
-	if (!ret_line)
-		return (ft_free(dest, NULL, 0));
-	dest = sl_ft_remainder(dest);
-	return (ret_line);
-}
-
-char	**create_map(int fd)
+int	create_map(int fd, t_map *map)
 {
 	char	*txt;
 	char	*temp;
 	char	*new_txt;
 	char	**full_txt;
 
+	full_txt = NULL;
 	new_txt = NULL;
 	txt = ft_strdup("");
 	while (1)
 	{
-		temp = sl_get_next_line(fd);
+		temp = get_next_line(fd);
 		if (!temp)
 			break ;
 		new_txt = ft_strjoin(txt, temp);
@@ -138,11 +47,12 @@ char	**create_map(int fd)
 		free(temp);
 		txt = new_txt;
 	}
-	if (txt[0] == 0)
-		return (free(txt), NULL);
-	full_txt = ft_split(txt, '\n');
-	free(new_txt);
-	return (full_txt);
+	map->content = ft_split(txt, '\n');
+	map->cpy = ft_split(txt, '\n');
+	free(txt);
+	if (!full_txt)
+		return (1);
+	return (0);
 }
 
 int	validate_map(char **map)
@@ -153,8 +63,8 @@ int	validate_map(char **map)
 	int	start_exit;
 	int	collect;
 
-	a = 0;
 	length[0] = 0;
+	a = 0;
 	start_exit = 0;
 	collect = 0;
 	while (map[length[0]])
@@ -187,12 +97,13 @@ int	validate_map(char **map)
 void	fill_grid(char **map, int x, int y, int length[], int *count)
 {
 	if (map[x][y] == 'C')
-	{
 		(*count)++;
-	}
 	if (map[x][y] == '1' || map[x][y] == 'F' || map[x][y] == 'E')
 		return ;
-	map[x][y] = 'F';
+	if (map[x][y] == '0')
+		map[x][y] = 'F';
+	if (map[x][y] == 'C')
+		map[x][y] = 'c';
 	if (x + 1 < length[0])
 		fill_grid(map, x + 1, y, length, count);
 	if (x - 1 >= 0)
@@ -207,7 +118,7 @@ int	flood_fill(char **map)
 {
 	int	x;
 	int	y;
-	int length[2];
+	int	length[2];
 	int	count;
 
 	length[0] = 0;
@@ -230,30 +141,183 @@ int	flood_fill(char **map)
 	return (1);
 }
 
+int	ft_close(t_mlx_data *data)
+{
+	mlx_destroy_image(data->mlx_ptr, data->img.tree);
+	mlx_destroy_image(data->mlx_ptr, data->img.collect);
+	mlx_destroy_image(data->mlx_ptr, data->img.exit);
+	mlx_destroy_image(data->mlx_ptr, data->img.grass);
+	mlx_destroy_image(data->mlx_ptr, data->img.player);
+	mlx_destroy_window(data->mlx_ptr, data->win_ptr);
+	mlx_destroy_display(data->mlx_ptr);
+	free(data->mlx_ptr);
+	ft_freeme(data->map->content);
+	ft_freeme(data->map->cpy);
+	free(data->map);
+	free(data);
+	exit(1);
+}
+
+void	move(t_mlx_data *data, int x_increase, int y_increase)
+{
+	int	new_x;
+	int	new_y;
+
+	new_x = data->x_pos + x_increase;
+	new_y = data->y_pos + y_increase;
+	if (new_x >= data->map->x_len || new_x <= 0 || new_y >= data->map->y_len
+		|| new_y <= 0)
+		return ;
+	if (data->map->content[new_y][new_x] == '1'
+		|| (data->map->content[new_y][new_x] == 'E'
+			&& data->collect_total != data->collected))
+		return ;
+	if (data->map->content[new_y][new_x] == 'C')
+	{
+		data->map->content[new_y][new_x] = '0';
+		data->collected++;
+		printf("Collected : %i/%i\n", data->collected, data->collect_total);
+	}
+	if (data->map->content[new_y][new_x] == 'E')
+		ft_close(data);
+	mlx_put_image_to_window(data->mlx_ptr, data->win_ptr, data->img.grass, 38
+		* data->x_pos, 38 * data->y_pos);
+	data->moves++;
+	printf("Moves: %i\n", data->moves);
+	data->x_pos = new_x;
+	data->y_pos = new_y;
+	mlx_put_image_to_window(data->mlx_ptr, data->win_ptr, data->img.player, 38
+		* data->x_pos, 38 * data->y_pos);
+}
+
+int	handle_input(int keysym, t_mlx_data *data)
+{
+	if (keysym == XK_Escape)
+		ft_close(data);
+	else if (keysym == 65361)
+		move(data, -1, 0);
+	else if (keysym == 65363)
+		move(data, 1, 0);
+	else if (keysym == 65362)
+		move(data, 0, -1);
+	else if (keysym == 65364)
+		move(data, 0, 1);
+	return (0);
+}
+
+int	button_press(int button, t_mlx_data *data)
+{
+	if (button == 1)
+		ft_close(data);
+	return (0);
+}
+
+int	draw_background(t_mlx_data *data, int x, int y)
+{
+	int	x_count;
+	int	y_count;
+
+	x_count = 0;
+	y_count = 0;
+	while (y_count < y)
+	{
+		x_count = 0;
+		while (x_count < x)
+		{
+			if (data->map->content[y_count][x_count] == '0')
+				mlx_put_image_to_window(data->mlx_ptr, data->win_ptr,
+					data->img.grass, 38 * x_count, 38 * y_count);
+			else if (data->map->content[y_count][x_count] == '1')
+				mlx_put_image_to_window(data->mlx_ptr, data->win_ptr,
+					data->img.tree, 38 * x_count, 38 * y_count);
+			else if (data->map->content[y_count][x_count] == 'P')
+			{
+				data->x_pos = x_count;
+				data->y_pos = y_count;
+				mlx_put_image_to_window(data->mlx_ptr, data->win_ptr,
+					data->img.player, 38 * x_count, 38 * y_count);
+			}
+			else if (data->map->content[y_count][x_count] == 'E')
+				mlx_put_image_to_window(data->mlx_ptr, data->win_ptr,
+					data->img.exit, 38 * x_count, 38 * y_count);
+			else if (data->map->content[y_count][x_count] == 'C')
+				mlx_put_image_to_window(data->mlx_ptr, data->win_ptr,
+					data->img.collect, 38 * x_count, 38 * y_count);
+			x_count++;
+		}
+		y_count++;
+	}
+	data->map->x_len = x_count;
+	data->map->y_len = y_count;
+	return (0);
+}
+
+int	load_images(t_mlx_data *data)
+{
+	int	height;
+	int	width;
+
+	data->img.grass = mlx_xpm_file_to_image(data->mlx_ptr, "images/grass.xpm",
+			&width, &height);
+	data->img.tree = mlx_xpm_file_to_image(data->mlx_ptr, "images/tree.xpm",
+			&width, &height);
+	data->img.player = mlx_xpm_file_to_image(data->mlx_ptr, "images/player.xpm",
+			&width, &height);
+	data->img.exit = mlx_xpm_file_to_image(data->mlx_ptr, "images/exit.xpm",
+			&width, &height);
+	data->img.collect = mlx_xpm_file_to_image(data->mlx_ptr,
+			"images/mushroom.xpm", &width, &height);
+	if (!data->img.grass || !data->img.tree || !data->img.player
+		|| !data->img.exit || !data->img.collect)
+		ft_close(data);
+	return (0);
+}
+
+int	game_loop(t_mlx_data *data, int x, int y)
+{
+	data->mlx_ptr = mlx_init();
+	if (!data->mlx_ptr)
+		return (1);
+	data->win_ptr = mlx_new_window(data->mlx_ptr, x * 38, y * 38, "so_long");
+	if (!data->win_ptr)
+	{
+		mlx_destroy_display(data->mlx_ptr);
+		free(data->mlx_ptr);
+		return (1);
+	}
+	load_images(data);
+	draw_background(data, x, y);
+	mlx_key_hook(data->win_ptr, &handle_input, data);
+	mlx_hook(data->win_ptr, 17, 0, ft_close, data);
+	mlx_loop(data->mlx_ptr);
+	return (0);
+}
+
 int	main(int argc, char *argv[])
 {
-	int		fd;
-	char	**map;
-	int		collect_nb;
-	int		flood;
-	int		a;
+	int			fd;
+	int			flood;
+	int			a;
+	t_mlx_data	*data;
 
 	if (argc != 2)
 		exit(1);
 	fd = open(argv[1], O_RDONLY);
 	if (fd < 0)
 		return (perror("Error\nMessage"), 1);
-	map = create_map(fd);
-	if (!map)
-		exit(1);
-	collect_nb = validate_map(map);
-	if (collect_nb == 0)
+	data = malloc(sizeof(*(data)));
+	data->map = malloc(sizeof(*(data->map)));
+	create_map(fd, data->map);
+	data->collect_total = validate_map(data->map->cpy);
+	if (data->collect_total == 0)
 		return (printf("Error\nInvalid map"), 1);
-	flood = flood_fill(map);
-	if (collect_nb != flood)
+	flood = flood_fill(data->map->cpy);
+	if (data->collect_total != flood)
 		return (printf("Error\nNot all collectibles reachable"));
 	a = 0;
-	while (map[a])
-		printf("%s\n", map[a++]);
-	ft_freeme(map, a);
+	data->moves = 0;
+	while (data->map->content[a])
+		printf("%s\n", data->map->content[a++]);
+	data->collected = 0;
+	game_loop(data, ft_strlen(data->map->content[0]), a);
 }
