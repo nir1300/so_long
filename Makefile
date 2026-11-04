@@ -1,5 +1,5 @@
 # Define variables
-NAME = so_long.a
+NAME = so_long
 CC = cc
 CFLAGS = -Wall -Werror -Wextra
 
@@ -9,7 +9,7 @@ LIBFT = $(LIBFT_DIR)/libft.a
 INCLUDES = -I libft -I .
 
 # Files
-CFILES = validate_map.c
+CFILES = main.c events.c graphics.c helper.c map.c
 OFILES = $(CFILES:.c=.o)
 
 # Compilation rules
@@ -19,10 +19,10 @@ $(LIBFT):
 	make -C $(LIBFT_DIR) bonus
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(INCLUDES) -I/usr/include -Imlx_linux -O3 -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) -g -I/usr/include -Imlx_linux -O3 -c $< -o $@
 
 $(NAME): $(OFILES) $(LIBFT)
-	$(CC) $(CFLAGS) $(OFILES) -L$(LIBFT_DIR) -lft -Lmlx_linux -Imlx_Linux -L/usr/lib -Imlx_linux -lXext -lX11 -lm -lz -o $(NAME)
+	$(CC) $(CFLAGS) $(OFILES) -g -L$(LIBFT_DIR) -lft -Lmlx_linux -Imlx_Linux -lmlx -lXext -lX11 -lm -lz -o $(NAME)
 
 clean:
 	make clean -C $(LIBFT_DIR)
@@ -35,3 +35,4 @@ fclean: clean
 re: fclean all
 
 .PHONY: all bonus clean fclean re
+
